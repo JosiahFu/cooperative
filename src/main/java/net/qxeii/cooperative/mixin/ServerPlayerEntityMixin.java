@@ -31,7 +31,7 @@ public abstract class ServerPlayerEntityMixin {
 		PlayerEntity nearestPlayer = null;
 		Cooperative.LOGGER.info(String.valueOf(world.getPlayers()));
 		for (ServerPlayerEntity cplayer : world.getPlayers()) {
-			if (cplayer.isAlive() && cplayer.getUuid() != player.getUuid()) {
+			if (!cplayer.isDead() && cplayer.getUuid() != player.getUuid()) {
 				double dist = cplayer.squaredDistanceTo(pos);
 				if (dist < lowestDist || lowestDist == -1) {
 					lowestDist = dist;
@@ -43,12 +43,15 @@ public abstract class ServerPlayerEntityMixin {
 			Vec3d pos2 = nearestPlayer.getPos();
 			double xShift = RandomUtils.nextDouble(0, 100);
 			double zShift = RandomUtils.nextDouble(0, 100);
-			double x = Math.min(Math.max((xShift - 50), 0), 255);
-			double z = Math.min(Math.max((zShift - 50), 0), 255);
+			double x = (xShift - 50);
+			double z = (zShift - 50);
 			Vec3d vec = Vec3d.ZERO.add(x, 0, z);
 			pos2 = pos2.add(vec);
 			BlockPos tp = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, BlockPos.ofFloored(pos2));
 			player.setSpawnPoint(world.getRegistryKey(), tp, 0F, true, false);
+		}
+		else {
+		player.setSpawnPoint(world.getRegistryKey(), world.getSpawnPos(), 0F,true, false);
 		}
 	}
 }

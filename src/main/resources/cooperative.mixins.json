@@ -3,7 +3,6 @@
 	"package": "net.qxeii.cooperative.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ServerPlayConnectionEventsMixin",
 		"PlayerManagerMixin"
 	],
 	"injectors": {

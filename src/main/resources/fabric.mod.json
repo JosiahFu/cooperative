@@ -8,10 +8,11 @@
 		"qxeii"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/cooperative",
+		"sources": "https://github.com/qxeii/cooperative",
+		"issues": "https://github.com/qxeii/cooperative/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "MPL-2.0",
 	"icon": "assets/cooperative/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -24,11 +25,8 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.14.21",
+		"fabric": "*",
 		"minecraft": ">=1.20",
-		"java": ">=17",
-		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
+		"java": ">=17"
 	}
 }

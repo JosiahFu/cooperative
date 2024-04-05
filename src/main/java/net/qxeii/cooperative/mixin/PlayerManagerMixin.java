@@ -1,7 +1,5 @@
 package net.qxeii.cooperative.mixin;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -12,6 +10,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
 import org.apache.commons.lang3.RandomUtils;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,26 +18,33 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerManager.class)
 public class PlayerManagerMixin {
+    /**
+     * How far away from other players this player must respawn in order to be teleported
+     */
+    @Unique
+    private static final int MINIMUM_RESPAWN_DISTANCE = 16 * 2;
 
     @Inject(at = @At("HEAD"), method="respawnPlayer")
     public void respawnPlayer(ServerPlayerEntity player, boolean alive, CallbackInfoReturnable<ServerPlayerEntity> cir) {
             double lowestDist = -1;
-            Vec3d pos = player.getPos();
-            ServerWorld world = player.getServerWorld();
+            Vec3d deathPos = player.getPos();
             MinecraftServer server = player.getServer();
-            PlayerEntity nearestPlayer = null;
-            for (String playername : server.getPlayerNames()) {
-                ServerPlayerEntity cplayer = server.getPlayerManager().getPlayer(playername);
+            if (server == null) return;
+
+            BlockPos spawnPos = player.getSpawnPointPosition();
+
+            ServerPlayerEntity nearestPlayer = null;
+            for (ServerPlayerEntity cplayer : server.getPlayerManager().getPlayerList()) {
                 if (!cplayer.isDead() && cplayer.getUuid() != player.getUuid()) {
-                    double dist = cplayer.squaredDistanceTo(pos);
+                    double dist = cplayer.squaredDistanceTo(deathPos);
                     if (dist < lowestDist || lowestDist == -1) {
                         lowestDist = dist;
                         nearestPlayer = cplayer;
                     }
                 }
             }
-            if (nearestPlayer != null) {
-                ServerWorld newWorld = ((ServerPlayerEntity) nearestPlayer).getServerWorld();
+            if (nearestPlayer != null && (spawnPos == null || !spawnPos.isWithinDistance(nearestPlayer.getBlockPos(), MINIMUM_RESPAWN_DISTANCE)) && deathPos.isInRange(nearestPlayer.getPos(), MINIMUM_RESPAWN_DISTANCE)) {
+                ServerWorld newWorld = nearestPlayer.getServerWorld();
                 BlockPos tp;
                 if(!newWorld.getDimension().hasCeiling() && newWorld.getDimension().bedWorks()) {
                     Vec3d pos2 = nearestPlayer.getPos();
@@ -57,9 +63,6 @@ public class PlayerManagerMixin {
                 player.setSpawnPoint(newWorld.getRegistryKey(), tp, 0F, true, false);
 
             }
-            else{
-                player.setSpawnPoint(world.getRegistryKey(), world.getSpawnPos(), 0F, false, false);
-            }
         }
     @Inject(at = @At("TAIL"), method = "onPlayerConnect")
     public void joinServer(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
@@ -68,7 +71,7 @@ public class PlayerManagerMixin {
             double lowestDist = -1;
             Vec3d pos = player.getPos();
             ServerWorld world = player.getServerWorld();
-            PlayerEntity nearestPlayer = null;
+            ServerPlayerEntity nearestPlayer = null;
             for (String playername : server.getPlayerNames()) {
                 ServerPlayerEntity cplayer = server.getPlayerManager().getPlayer(playername);
                 if (!cplayer.isDead() && cplayer.getUuid() != player.getUuid()) {
@@ -80,7 +83,7 @@ public class PlayerManagerMixin {
                 }
             }
             if (nearestPlayer != null) {
-                ServerWorld newWorld = ((ServerPlayerEntity) nearestPlayer).getServerWorld();
+                ServerWorld newWorld = nearestPlayer.getServerWorld();
                 BlockPos tp;
                 if (!newWorld.getDimension().hasCeiling() && newWorld.getDimension().bedWorks()) {
                     Vec3d pos2 = nearestPlayer.getPos();
